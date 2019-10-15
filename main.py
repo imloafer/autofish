@@ -200,7 +200,6 @@ class MonitorKey(QThread):
 
         listener = keyboard.Listener(on_press=self.on_release)
         listener.start()
-        listener.join()
 
 
 if __name__ == "__main__":
