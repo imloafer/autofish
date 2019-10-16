@@ -102,6 +102,7 @@ class UI(QMainWindow):
                 self.button_start.setText(self.tr('Start'))
                 self.ui.statusbar.showMessage(self.tr('Stop'))
                 self.intl = self.counter
+
         else:
             QMessageBox.warning(self, self.tr('warning'),
                                 self.tr('Minecraft does not run'),
@@ -192,19 +193,22 @@ class AutoFish(QThread):
         i = 0
         while self.flag:
             self.message.emit(self.tr('waiting'))
-            time.sleep(0.2)
-            im = ImageGrab.grab(bbox=self.bbox)
-
-            im = im.resize((128, 128))
-            data_set = set(im.getdata())
-
+            time.sleep(0.5)
+            data_set = self._grab_window()
             if self.color_set.intersection(data_set) == set():
                 pyautogui.click(button='right')
-                i += 1
-                self.times.emit(i)
-                self.message.emit(self.tr('fishing'))
-                time.sleep(0.2)
-                pyautogui.click(button='right')
+                time.sleep(0.5)
+                data_set1 = self._grab_window()
+                if self.color_set.intersection(data_set1) == set():
+                    i += 1
+                    self.times.emit(i)
+                    self.message.emit(self.tr('fishing'))
+                    pyautogui.click(button='right')
+
+    def _grab_window(self):
+        im = ImageGrab.grab(bbox=self.bbox)
+        im = im.resize((128, 128))
+        return set(im.getdata())
 
 
 class MonitorKey(QThread):
@@ -225,6 +229,7 @@ class MonitorKey(QThread):
     def run(self):
         listener = keyboard.Listener(on_press=self.on_release)
         listener.start()
+        listener.join()
 
 
 if __name__ == "__main__":
