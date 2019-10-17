@@ -8,7 +8,8 @@ import win32gui
 from pynput import keyboard
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialogButtonBox,
                              QAction, QMessageBox)
-from PyQt5.QtCore import QThread, pyqtSignal, QTranslator, QLocale, Qt
+from PyQt5.QtCore import (QThread, pyqtSignal, QTranslator,
+                          QLocale, Qt, QTimer, QTime)
 from PyQt5.QtGui import QPalette
 from minecraft import Ui_AutoFish
 import minecraft_rc
@@ -28,9 +29,15 @@ class UI(QMainWindow):
         # load UI and config UI
         self.ui = Ui_AutoFish()
         self.ui.setupUi(self)
+        # add a timer and a time clock
+        self.timer = QTimer()
+        self.timeClock = QTime()
+        self.timeClock.setHMS(0, 0, 0)
+        self.timer.timeout.connect(self.display_time)
         qp = QPalette()
-        qp.setColor(QPalette.WindowText, Qt.red)
+        qp.setColor(QPalette.WindowText, Qt.blue)
         self.ui.lcd_counter.setPalette(qp)
+        self.ui.lcd_time.setPalette(qp)
         self.ui.statusbar.showMessage(self.tr('Ready'))
         # get color values and original corner values
         self.red1 = self.ui.spinBox_R1.value()
@@ -47,7 +54,7 @@ class UI(QMainWindow):
         self.set_bbox()
         # initiate fishing times counter
         self.counter = 0
-        self.intl = 0
+
         # add 2 buttons for activating fishing and quit program
         self.button_start = self.ui.buttonBox.addButton(self.tr('Start'),
                                                         QDialogButtonBox.ActionRole)
@@ -93,30 +100,32 @@ class UI(QMainWindow):
             if txt == self.tr('Start'):
                 self.autofish = AutoFish(self.color_set, self.bbox)
                 self.autofish.start()
+                self.timer.start(1000)
                 self.button_start.setText(self.tr('Stop'))
                 self.autofish.message.connect(self.show_message)
                 self.autofish.times.connect(self.show_times)
-
             else:
                 self.autofish.terminate()
+                self.timer.stop()
                 self.button_start.setText(self.tr('Start'))
                 self.ui.statusbar.showMessage(self.tr('Stop'))
-                self.intl = self.counter
-
         else:
             QMessageBox.warning(self, self.tr('warning'),
                                 self.tr('Minecraft does not run'),
                                 QMessageBox.Cancel)
 
+    def display_time(self):
+        self.timeClock = self.timeClock.addMSecs(1000)
+        self.ui.lcd_time.display(self.timeClock.toString("hh:mm:ss"))
+
     def show_message(self, message):
         # show program on-process information
         self.ui.statusbar.showMessage(message)
 
-    def show_times(self, times):
+    def show_times(self):
         # show fishing times
-        times += self.intl
-        self.ui.lcd_counter.display(times)
-        self.counter = times
+        self.counter += 1
+        self.ui.lcd_counter.display(self.counter)
 
     def set_width(self):
         # set new snapshot width original X
@@ -181,7 +190,7 @@ class UI(QMainWindow):
 class AutoFish(QThread):
     # fishing threading
     message = pyqtSignal(str)
-    times = pyqtSignal(int)
+    times = pyqtSignal()
 
     def __init__(self, color_set, bbox):
         super(AutoFish, self).__init__()
@@ -190,7 +199,6 @@ class AutoFish(QThread):
         self.flag = True
 
     def run(self):
-        i = 0
         while self.flag:
             self.message.emit(self.tr('waiting'))
             time.sleep(0.5)
@@ -200,8 +208,7 @@ class AutoFish(QThread):
                 time.sleep(0.5)
                 data_set1 = self._grab_window()
                 if self.color_set.intersection(data_set1) == set():
-                    i += 1
-                    self.times.emit(i)
+                    self.times.emit()
                     self.message.emit(self.tr('fishing'))
                     pyautogui.click(button='right')
 
@@ -229,7 +236,7 @@ class MonitorKey(QThread):
     def run(self):
         listener = keyboard.Listener(on_press=self.on_release)
         listener.start()
-        listener.join()
+        # listener.join()
 
 
 if __name__ == "__main__":
