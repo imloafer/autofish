@@ -1,7 +1,8 @@
 # -*- mode: python -*-
 
 block_cipher = None
-added_files = [('C:/Users\Jerry/PycharmProjects/jiangyang_learn_python/*.qm', '.')]
+added_files = [('C:/Users\Jerry/PycharmProjects/jiangyang_learn_python/*.qm', '.'),
+('C:/Users\Jerry/PycharmProjects/jiangyang_learn_python/*.json', '.')]
 
 a = Analysis(['main.py'],
              pathex=['C:\\Users\Jerry\\PycharmProjects\\jiangyang_learn_python'],
