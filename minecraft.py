@@ -8,6 +8,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+__version__ = '0.0.4'
 
 
 class Ui_AutoFish(object):

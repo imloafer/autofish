@@ -1,5 +1,6 @@
 import sys
 from PIL import ImageGrab
+import json
 import time
 from win32api import GetSystemMetrics
 import win32con
@@ -7,12 +8,14 @@ import pyautogui
 import win32gui
 from pynput import keyboard
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialogButtonBox,
-                             QAction, QMessageBox)
+                             QAction, QMessageBox, QSpinBox)
 from PyQt5.QtCore import (QThread, pyqtSignal, QTranslator,
                           QLocale, Qt, QTimer, QTime)
 from PyQt5.QtGui import QPalette
 from minecraft import Ui_AutoFish
 import minecraft_rc
+
+__version__ = '0.0.5'
 
 
 class UI(QMainWindow):
@@ -22,13 +25,18 @@ class UI(QMainWindow):
         # get screen dimension
         self.screen_l = GetSystemMetrics(win32con.SM_CXSCREEN)
         self.screen_h = GetSystemMetrics(win32con.SM_CYSCREEN)
+
         # start keyboard monitoring
         mkey = MonitorKey()
         mkey.start()
         mkey.send_key.connect(self.get_key)
-        # load UI and config UI
+
+        with open('color.json', 'r') as f:
+            self.color = json.load(f)
+        # load UI
         self.ui = Ui_AutoFish()
         self.ui.setupUi(self)
+
         # add a timer and a time clock
         self.timer = QTimer()
         self.timeClock = QTime()
@@ -39,19 +47,23 @@ class UI(QMainWindow):
         self.ui.lcd_counter.setPalette(qp)
         self.ui.lcd_time.setPalette(qp)
         self.ui.statusbar.showMessage(self.tr('Ready'))
+
         # get color values and original corner values
-        self.red1 = self.ui.spinBox_R1.value()
-        self.red2 = self.ui.spinBox_R2.value()
-        self.green1 = self.ui.spinBox_G1.value()
-        self.green2 = self.ui.spinBox_G2.value()
-        self.blue1 = self.ui.spinBox_B1.value()
-        self.blue2 = self.ui.spinBox_B2.value()
+        self.ui.spinBox_R1.setValue(self.color['red1'])
+        self.ui.spinBox_R2.setValue(self.color['red2'])
+        self.ui.spinBox_G1.setValue(self.color['green1'])
+        self.ui.spinBox_G2.setValue(self.color['green2'])
+        self.ui.spinBox_B1.setValue(self.color['blue1'])
+        self.ui.spinBox_B2.setValue(self.color['blue2'])
         self.height = self.ui.verticalSlider.value()
         self.width = self.ui.horizontalSlider.value()
+
         # initiate color set value
         self.set_color()
+
         # initiate snapshot rectangle coordinate
         self.set_bbox()
+
         # initiate fishing times counter
         self.counter = 0
 
@@ -60,20 +72,33 @@ class UI(QMainWindow):
                                                         QDialogButtonBox.ActionRole)
         self.button_close = self.ui.buttonBox.addButton(QDialogButtonBox.Close)
         self.button_close.setText(self.tr('Close'))
+
         # get current color value and original snapshot coordinate value
-        self.ui.spinBox_R1.valueChanged.connect(self.set_red1)
-        self.ui.spinBox_R2.valueChanged.connect(self.set_red2)
-        self.ui.spinBox_B1.valueChanged.connect(self.set_blue1)
-        self.ui.spinBox_B2.valueChanged.connect(self.set_blue2)
-        self.ui.spinBox_G1.valueChanged.connect(self.set_green1)
-        self.ui.spinBox_G2.valueChanged.connect(self.set_green2)
+        for child in self.ui.gBox_color.children():
+            if isinstance(child, QSpinBox):
+                child.valueChanged.connect(self.set_color_value)
+
+        # get current point X, Y coodinate
         self.ui.horizontalSlider.valueChanged.connect(self.set_width)
         self.ui.verticalSlider.valueChanged.connect(self.set_height)
+
         # menu actions signal
-        self.ui.menuHelp.triggered[QAction].connect(self.show_help)
+        self.ui.menuHelp.triggered.connect(self.show_help)
         # buttons signal
+
         self.button_start.clicked.connect(self.start_fishing)
         self.button_close.clicked.connect(self.close)
+
+    def set_color_value(self):
+        self.color['red1'] = self.ui.spinBox_R1.value()
+        self.color['red2'] = self.ui.spinBox_R2.value()
+        self.color['green1'] = self.ui.spinBox_G1.value()
+        self.color['green2'] = self.ui.spinBox_G2.value()
+        self.color['blue1'] = self.ui.spinBox_B1.value()
+        self.color['blue2'] = self.ui.spinBox_B2.value()
+        self.set_color()
+        with open('color.json', 'w+') as f:
+            json.dump(self.color, f)
 
     def get_key(self, key):
         # capture certain key
@@ -137,45 +162,18 @@ class UI(QMainWindow):
         self.height = self.ui.verticalSlider.value()
         self.set_bbox()
 
-    def set_red1(self):
-        # set new red lower value
-        self.red1 = self.ui.spinBox_R1.value()
-        self.set_color()
-
-    def set_red2(self):
-        # set new red upper value
-        self.red2 = self.ui.spinBox_R2.value()
-        self.set_color()
-
-    def set_blue1(self):
-        # set new blue lower value
-        self.blue1 = self.ui.spinBox_B1.value()
-        self.set_color()
-
-    def set_blue2(self):
-        # set new blue upper value
-        self.blue2 = self.ui.spinBox_B2.value()
-        self.set_color()
-
-    def set_green1(self):
-        # set new green lower value
-        self.green1 = self.ui.spinBox_G1.value()
-        self.set_color()
-
-    def set_green2(self):
-        # set new green upper value
-        self.green2 = self.ui.spinBox_G2.value()
-        self.set_color()
-
     def set_color(self):
         # generate a color set depends on given colors
-        self.color_set = {(x, y, z) for x in range(self.red1, self.red2)
-                          for y in range(self.green1, self.green2)
-                          for z in range(self.blue1, self.blue2)}
+        self.color_set = {(x, y, z) for x in range(self.color['red1'],
+                                                   self.color['red2'])
+                          for y in range(self.color['green1'],
+                                         self.color['green2'])
+                          for z in range(self.color['blue1'],
+                                         self.color['blue2'])}
 
     def set_bbox(self):
         # get snapshot rectangle coordinate
-        # grab a snapshot by giving box
+        # grab a snapshot by given box
         x_lu = int((self.screen_l - 256) * self.width/100)
         y_lu = int((self.screen_h-128) * self.height/100)
         x_rl = x_lu + 256
