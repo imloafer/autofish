@@ -8,7 +8,6 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-__version__ = '0.0.4'
 
 
 class Ui_AutoFish(object):
@@ -178,7 +177,11 @@ class Ui_AutoFish(object):
         self.verticalLayout_9.addLayout(self.horizontalLayout_6)
         AutoFish.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(AutoFish)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 554, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 554, 27))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.menubar.setFont(font)
+        self.menubar.setLayoutDirection(QtCore.Qt.RightToLeft)
         self.menubar.setObjectName("menubar")
         self.menuHelp = QtWidgets.QMenu(self.menubar)
         font = QtGui.QFont()
@@ -196,6 +199,7 @@ class Ui_AutoFish(object):
         self.actionAbout.setFont(font)
         self.actionAbout.setObjectName("actionAbout")
         self.actionHow = QtWidgets.QAction(AutoFish)
+        self.actionHow.setCheckable(True)
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
         font.setPointSize(12)
@@ -223,5 +227,5 @@ class Ui_AutoFish(object):
         self.groupBox_pic.setTitle(_translate("AutoFish", "Snapshot preview"))
         self.menuHelp.setTitle(_translate("AutoFish", "Help"))
         self.actionAbout.setText(_translate("AutoFish", "About"))
-        self.actionHow.setText(_translate("AutoFish", "How to use"))
+        self.actionHow.setText(_translate("AutoFish", "Always on Top"))
 import minecraft_rc

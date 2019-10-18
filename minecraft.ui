@@ -341,8 +341,16 @@
      <x>0</x>
      <y>0</y>
      <width>554</width>
-     <height>23</height>
+     <height>27</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
    </property>
    <widget class="QMenu" name="menuHelp">
     <property name="font">
@@ -371,8 +379,11 @@
    </property>
   </action>
   <action name="actionHow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>How to use</string>
+    <string>Always on Top</string>
    </property>
    <property name="font">
     <font>

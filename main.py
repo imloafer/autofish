@@ -2,25 +2,25 @@ import sys
 from PIL import ImageGrab
 import json
 import time
+import re
 from win32api import GetSystemMetrics
 import win32con
 import pyautogui
-import win32gui
 from pynput import keyboard
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDialogButtonBox,
-                             QAction, QMessageBox, QSpinBox)
+                             QMessageBox, QSpinBox)
 from PyQt5.QtCore import (QThread, pyqtSignal, QTranslator,
                           QLocale, Qt, QTimer, QTime)
 from PyQt5.QtGui import QPalette
 from minecraft import Ui_AutoFish
+from get_window import GetWindow
 import minecraft_rc
 
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 
 class UI(QMainWindow):
     def __init__(self):
-
         super(UI, self).__init__()
         # get screen dimension
         self.screen_l = GetSystemMetrics(win32con.SM_CXSCREEN)
@@ -36,6 +36,9 @@ class UI(QMainWindow):
         # load UI
         self.ui = Ui_AutoFish()
         self.ui.setupUi(self)
+
+        # set 'Minecraft' switch
+        self.handle = False
 
         # add a timer and a time clock
         self.timer = QTimer()
@@ -78,7 +81,7 @@ class UI(QMainWindow):
             if isinstance(child, QSpinBox):
                 child.valueChanged.connect(self.set_color_value)
 
-        # get current point X, Y coodinate
+        # get current point X, Y coordinate
         self.ui.horizontalSlider.valueChanged.connect(self.set_width)
         self.ui.verticalSlider.valueChanged.connect(self.set_height)
 
@@ -109,19 +112,28 @@ class UI(QMainWindow):
     def show_help(self, action):
         # show about and help information
         if action == self.ui.actionAbout:
+
             QMessageBox.information(self, self.tr('About'),
                                     self.tr('Auto fishing for Minecraft\n'
-                                            'made by imloafer@163.com'),
+                                            + 'made by imloafer@163.com\n'
+                                            + 'V: %s' % __version__),
                                     QMessageBox.Close)
-        else:
-            pass
+        elif action == self.ui.actionHow:
+            if self.ui.actionHow.isChecked():
+                self.setWindowFlags(Qt.WindowStaysOnTopHint)
+            else:
+                self.setWindowFlags(Qt.WindowShadeButtonHint)
+            self.show()
 
     def start_fishing(self):
         # activate fishing thread
         # terminate fishing thread
         txt = self.button_start.text()
-        handle = win32gui.FindWindow(None, 'Minecraft')
-        if handle:
+        gw = GetWindow()
+        for title in gw.title_list:
+            if re.match('Minecraft', title):
+                self.handle = True
+        if self.handle:
             if txt == self.tr('Start'):
                 self.autofish = AutoFish(self.color_set, self.bbox)
                 self.autofish.start()
